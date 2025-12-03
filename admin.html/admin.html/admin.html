@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>SKYFALL | Kitchen Display</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { background-color: #0f1319; color: #fff; font-family: 'Montserrat', sans-serif; padding: 20px; }
+        
+        .header { 
+            display: flex; justify-content: space-between; align-items: center; 
+            border-bottom: 2px solid #c88a55; padding-bottom: 20px; margin-bottom: 20px; 
+        }
+        h1 { color: #c88a55; margin: 0; letter-spacing: 2px; }
+
+        /* การ์ดออเดอร์ */
+        .order-card {
+            background: #161b25; 
+            padding: 25px; 
+            margin-bottom: 15px; 
+            border-radius: 8px; 
+            border-left: 6px solid #c88a55; 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            /* ลบ Animation loop ออก เพื่อกันกระพริบ */
+            transition: all 0.3s ease; 
+        }
+
+        .info h2 { margin: 0; font-size: 1.6rem; color: #fff; }
+        .info p { margin: 8px 0 0; color: #aaa; font-size: 1rem; }
+        .customer-highlight { color: #c88a55; font-weight: bold; font-size: 1.2rem; }
+
+        .right-side { text-align: right; }
+        .price { color: #c88a55; font-size: 1.4rem; font-weight: bold; margin-bottom: 10px; display: block; }
+
+        .btn-serve { 
+            background: #28a745; color: white; border: none; padding: 12px 25px; 
+            border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1rem; 
+            transition: 0.3s;
+        }
+        .btn-serve:hover { background: #218838; transform: scale(1.05); }
+
+        .btn-clear { 
+            background: #d32f2f; color: white; border: none; padding: 10px 20px; 
+            border-radius: 4px; cursor: pointer; font-weight: 600;
+        }
+        .btn-clear:hover { background: #b71c1c; }
+        
+        .no-order { 
+            text-align: center; color: #555; margin-top: 100px; 
+            font-size: 1.5rem; letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>SKYFALL KITCHEN</h1>
+        <button class="btn-clear" onclick="clearAll()">CLEAR HISTORY</button>
+    </div>
+
+    <div id="order-container">
+        </div>
+    
+    <div id="waiting-msg" class="no-order">Waiting for orders...</div>
+
+    <script>
+        // *** ตัวแปรจำค่าเก่า (Anti-Blink System) ***
+        let lastDataString = ""; 
+
+        function renderOrders() {
+            // 1. ดึงข้อมูลดิบมาดูก่อน
+            const rawData = localStorage.getItem('skyfall_db_final');
+
+            // 2. เช็คว่า "ข้อมูลเหมือนเดิมเป๊ะไหม?" 
+            // ถ้าเหมือนเดิม -> หยุดทำงานทันที (ไม่ต้องวาดใหม่ หน้าจอจะไม่กระพริบ)
+            if (rawData === lastDataString) {
+                return; 
+            }
+
+            // 3. ถ้าข้อมูลเปลี่ยนไป (มีคนสั่งเพิ่ม/มีคนกดลบ) -> ค่อยบันทึกค่าใหม่แล้ววาดหน้าจอ
+            lastDataString = rawData; 
+            const orders = JSON.parse(rawData) || [];
+            
+            const container = document.getElementById('order-container');
+            const msg = document.getElementById('waiting-msg');
+
+            container.innerHTML = ''; // ล้างข้อมูลเก่า
+
+            if (orders.length === 0) {
+                msg.style.display = 'block';
+            } else {
+                msg.style.display = 'none';
+                
+                // วาดการ์ดใหม่
+                orders.slice().reverse().forEach((order, index) => {
+                    const realIndex = orders.length - 1 - index;
+                    const html = `
+                        <div class="order-card">
+                            <div class="info">
+                                <p style="color:#c88a55; font-size:0.9rem;">
+                                    <i class="fas fa-clock"></i> ${order.time} • #${order.id}
+                                </p>
+                                <h2>${order.menu}</h2>
+                                <p>Customer: <span class="customer-highlight">${order.customer}</span></p>
+                            </div>
+                            <div class="right-side">
+                                <span class="price">${order.price} THB</span>
+                                <button class="btn-serve" onclick="finishOrder(${realIndex})">SERVE (เสร็จสิ้น)</button>
+                            </div>
+                        </div>
+                    `;
+                    container.innerHTML += html;
+                });
+            }
+        }
+
+        // ฟังก์ชันลบออเดอร์
+        function finishOrder(index) {
+            let orders = JSON.parse(localStorage.getItem('skyfall_db_final')) || [];
+            orders.splice(index, 1);
+            localStorage.setItem('skyfall_db_final', JSON.stringify(orders));
+            // ไม่ต้องเรียก renderOrders() เองแล้ว เพราะ loop ข้างล่างจะจับความเปลี่ยนแปลงได้เอง
+        }
+
+        // ฟังก์ชันล้างทั้งหมด
+        function clearAll() {
+            if(confirm("ยืนยันลบออเดอร์ทั้งหมด?")) {
+                localStorage.removeItem('skyfall_db_final');
+            }
+        }
+
+        // เช็คข้อมูลทุกๆ 1 วินาที (แต่จะวาดใหม่เฉพาะตอนมีของใหม่เท่านั้น)
+        setInterval(renderOrders, 1000);
+        renderOrders(); // เรียกครั้งแรกทันทีที่เปิด
+    </script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+</body>
+</html>
