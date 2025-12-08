@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SKYFALL | Order</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* --- DESIGN SYSTEM --- */
+        :root { 
+            --bg-dark: #0f1319; 
+            --bg-card: #161b25; 
+            --text: #f5f5f5; 
+            --gold: #c88a55;   /* Coffee */
+            --orange: #ff9f43; /* Tea */
+            --green: #2ecc71;  /* Matcha */
+            --pink: #ff6b6b;   /* Fruit Tea */
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Montserrat', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text); overflow-x: hidden; padding-bottom: 80px; }
+
+        /* Login Style */
+        #login-view {
+            height: 100vh; width: 100%; display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
+            background: linear-gradient(rgba(0,0,0,0.7), #0f1319), url('https://images.unsplash.com/photo-1497935586351-b67a49e012bf');
+            background-size: cover; background-position: center;
+            position: fixed; top: 0; left: 0; z-index: 9999;
+        }
+        .login-box {
+            background: rgba(22, 27, 37, 0.95); padding: 40px; border-radius: 15px;
+            border: 2px solid var(--gold); text-align: center; width: 90%; max-width: 400px;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+        .login-input {
+            width: 100%; padding: 15px; background: #000; border: 1px solid #555; color: #fff;
+            margin: 20px 0; text-align: center; font-size: 1.2rem; border-radius: 5px;
+        }
+        .btn-main {
+            background: var(--gold); color: #000; padding: 15px; width: 100%; border: none;
+            font-weight: bold; font-size: 1.1rem; cursor: pointer; border-radius: 5px; transition: 0.3s;
+        }
+        .btn-main:hover { transform: scale(1.02); filter: brightness(1.1); }
+        .btn-main:disabled { background: #555; color: #888; cursor: not-allowed; transform: none; }
+
+        /* Navbar */
+        .navbar { padding: 15px 20px; background: #000; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333; }
+        .logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: #fff; letter-spacing: 2px; }
+
+        /* Category Filter */
+        .category-scroll {
+            display: flex; gap: 10px; overflow-x: auto; padding: 15px 20px;
+            background: rgba(0,0,0,0.5); white-space: nowrap;
+        }
+        .cat-btn {
+            background: #222; color: #aaa; border: 1px solid #444; 
+            padding: 8px 20px; border-radius: 20px; cursor: pointer; transition: 0.3s;
+        }
+        .cat-btn.active { background: var(--gold); color: #000; border-color: var(--gold); font-weight: bold; }
+        
+        /* Menu Grid */
+        .menu-container { max-width: 1200px; margin: 20px auto; padding: 0 20px; }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 20px; }
+        
+        .menu-card { 
+            background: var(--bg-card); border-radius: 12px; overflow: hidden; 
+            cursor: pointer; border: 2px solid transparent; transition: 0.3s; 
+            position: relative;
+        }
+        .menu-card:hover { transform: translateY(-5px); }
+        .menu-img { width: 100%; height: 180px; object-fit: cover; background-color: #222; }
+        .menu-info { padding: 15px; text-align: center; }
+        .menu-price { font-size: 1.1rem; font-weight: bold; margin-top: 5px; }
+
+        /* Category Colors */
+        .menu-card.coffee:hover { border-color: var(--gold); }
+        .menu-card.coffee .menu-price { color: var(--gold); }
+
+        .menu-card.tea:hover { border-color: var(--orange); }
+        .menu-card.tea .menu-price { color: var(--orange); }
+
+        .menu-card.matcha:hover { border-color: var(--green); }
+        .menu-card.matcha .menu-price { color: var(--green); }
+
+        .menu-card.fruittea:hover { border-color: var(--pink); }
+        .menu-card.fruittea .menu-price { color: var(--pink); }
+
+        /* Floating Cart */
+        .cart-fab {
+            position: fixed; bottom: 30px; right: 30px;
+            background: var(--gold); color: #000;
+            width: 65px; height: 65px; border-radius: 50%;
+            display: flex; justify-content: center; align-items: center;
+            font-size: 1.5rem; cursor: pointer;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5); z-index: 2000; 
+            animation: bounce 2s infinite;
+        }
+        @keyframes bounce { 0%, 20%, 50%, 80%, 100% {transform: translateY(0);} 40% {transform: translateY(-10px);} 60% {transform: translateY(-5px);} }
+        .cart-badge {
+            position: absolute; top: -5px; right: -5px; background: red; color: white;
+            width: 25px; height: 25px; border-radius: 50%; font-size: 0.8rem;
+            display: flex; justify-content: center; align-items: center; border: 2px solid #000;
+        }
+
+        /* Modals */
+        .modal-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); z-index: 5000;
+            display: none; justify-content: center; align-items: center;
+        }
+        .center-box { 
+            background: var(--bg-card); padding: 30px; border-radius: 10px; 
+            border: 1px solid var(--gold); text-align: center; 
+            width: 90%; max-width: 500px; max-height: 90vh; 
+            position: relative; overflow-y: auto;
+        }
+
+        .cart-item {
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(255,255,255,0.05); padding: 10px; margin-bottom: 10px; border-radius: 5px;
+        }
+
+        /* Verify Status */
+        .verify-box { margin-top: 15px; padding: 10px; border-radius: 5px; background: #222; font-size: 0.9rem; }
+        .status-wait { color: #f39c12; }
+        .status-success { color: #2ecc71; font-weight: bold; }
+        
+        .spinner { display: inline-block; width: 15px; height: 15px; border: 2px solid #fff; border-top: 2px solid var(--gold); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .fade-in { animation: fadeIn 0.5s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <div id="login-view">
+        <div class="login-box fade-in">
+            <h1 class="logo" style="font-size:3rem; margin-bottom:10px;">SKYFALL</h1>
+            <p style="color:var(--gold); margin-bottom:30px; letter-spacing: 2px;">THIS IS THY END</p>
+            <input type="text" id="username" class="login-input" placeholder="Name or Table No." autocomplete="off">
+            <button class="btn-main" style="margin-top:20px;" onclick="login()">ENTER SHOP</button>
+        </div>
+    </div>
+
+    <div id="menu-view" style="display: none;">
+        <div class="navbar">
+            <span class="logo">SKYFALL</span>
+            <span id="user-display" style="color:var(--gold); font-weight:bold;">Guest</span>
+        </div>
+
+        <div class="category-scroll">
+            <button class="cat-btn active" onclick="filterMenu('coffee', this)">☕ Coffee</button>
+            <button class="cat-btn" onclick="filterMenu('tea', this)">🍂 Tea</button>
+            <button class="cat-btn" onclick="filterMenu('matcha', this)">🍵 Matcha</button>
+            <button class="cat-btn" onclick="filterMenu('fruittea', this)">🍎 Fruit Tea</button>
+        </div>
+
+        <div class="menu-container fade-in">
+            <div id="menu-grid" class="menu-grid">
+                </div>
+        </div>
+
+        <div class="cart-fab" onclick="openCartModal()">
+            <i class="fas fa-shopping-basket"></i>
+            <div id="cart-count" class="cart-badge" style="display:none;">0</div>
+        </div>
+    </div>
+
+    <div id="cart-view" class="modal-overlay">
+        <div class="center-box fade-in">
+            <span onclick="closeModal('cart-view')" style="position:absolute; top:10px; right:20px; font-size:1.5rem; color:#fff; cursor:pointer;">&times;</span>
+            <h2 style="color:var(--gold); margin-bottom:20px;">YOUR CART</h2>
+            
+            <div id="cart-items-container" style="text-align:left; max-height:300px; overflow-y:auto;">
+                <p style="text-align:center; color:#555;">Your cart is empty.</p>
+            </div>
+
+            <div style="margin-top:20px; border-top:1px solid #333; padding-top:15px;">
+                <div style="display:flex; justify-content:space-between; font-size:1.2rem; color:var(--gold); font-weight:bold;">
+                    <span>TOTAL:</span>
+                    <span id="cart-total">0 THB</span>
+                </div>
+            </div>
+
+            <button class="btn-main" style="margin-top:20px;" onclick="goToPayment()">PROCEED TO CHECKOUT</button>
+            <button onclick="closeModal('cart-view')" style="margin-top:10px; background:transparent; border:1px solid #555; color:#aaa; padding:10px; width:100%; cursor:pointer;">Keep Shopping</button>
+        </div>
+    </div>
+
+    <div id="payment-view" class="modal-overlay">
+        <div class="center-box fade-in">
+            <span onclick="closeModal('payment-view')" style="position:absolute; top:10px; right:20px; font-size:1.5rem; color:#fff; cursor:pointer;">&times;</span>
+            <h2 style="color:var(--gold);">SCAN TO PAY</h2>
+            
+            <h1 id="pay-total-display" style="color:var(--gold); margin:10px 0;">0 THB</h1>
+            
+            <div style="background:#fff; width:250px; height:auto; margin:20px auto; padding:10px; border-radius:8px;">
+                <img id="dynamic-qr" src="" width="100%" alt="QR Code">
+            </div>
+            
+            <p style="color:#888;">Customer: <span id="pay-customer" style="color:#fff;">...</span></p>
+
+            <div class="verify-box">
+                <p id="verify-status" class="status-wait"><i class="fas fa-exclamation-circle"></i> Please scan to pay first.</p>
+            </div>
+
+            <div style="display:flex; gap:10px; margin-top:15px;">
+                 <button id="btn-verify" class="btn-main" style="background:#444; color:#fff;" onclick="verifyPayment()">
+                     <i class="fas fa-sync-alt"></i> Verify Payment
+                 </button>
+                 
+                 <button id="btn-confirm" class="btn-main" disabled onclick="confirmOrder()">
+                     PLACE ORDER
+                 </button>
+             </div>
+        </div>
+    </div>
+
+    <div id="status-view" class="modal-overlay" style="background:#0f1319;">
+        <div class="center-box fade-in" style="border:none; background:transparent;">
+            <i class="fas fa-check-circle" style="font-size:4rem; color:var(--gold); margin-bottom:20px;"></i>
+            <h1 style="color:#fff;">ORDER SENT!</h1>
+            <h2 id="order-id" style="color:var(--gold); margin:20px 0;">#SF-XXXX</h2>
+            <p style="color:#aaa;">We are preparing your drinks...</p>
+            <button onclick="location.reload()" style="margin-top:40px; background:transparent; border:1px solid #555; color:#fff; padding:10px 20px; cursor:pointer;">Back to Home</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        //  🔴 Edit PromptPay ID Here 🔴
+        // ==========================================
+        const SHOP_PROMPTPAY_ID = "0936078936"; 
+
+        // --- Menu Data (English) ---
+        const menuData = [
+            // Coffee
+            { id: 1, type: 'coffee', name: 'Espresso', price: 60, img: '1.jpg' },
+            { id: 2, type: 'coffee', name: 'Americano', price: 70, img: '2.jpg' },
+            { id: 3, type: 'coffee', name: 'Macchiato', price: 80, img: '3.jpg' },
+            { id: 4, type: 'coffee', name: 'Flat White', price: 90, img: '4.jpg' },
+            { id: 5, type: 'coffee', name: 'Cappuccino', price: 100, img: '5.jpg' },
+            { id: 6, type: 'coffee', name: 'Caffè Latte', price: 110, img: '6.jpg' },
+
+            // Tea
+            { id: 7, type: 'tea', name: 'Thai Tea', price: 40, img: '7.jpg' },
+            { id: 8, type: 'tea', name: 'Green Tea', price: 40, img: '8.jpg' },
+            { id: 9, type: 'tea', name: 'Taiwan Milk Tea', price: 40, img: '9.jpg' },
+            { id: 10, type: 'tea', name: 'Hokkaido Milk Tea', price: 50, img: '10.jpg' },
+            { id: 11, type: 'tea', name: 'Nestea', price: 40, img: '11.jpg' },
+
+            // Matcha
+            { id: 12, type: 'matcha', name: 'Light Matcha', price: 75, img: '12.jpg' },
+            { id: 13, type: 'matcha', name: 'Honey Matcha', price: 75, img: '13.jpg' },
+            { id: 14, type: 'matcha', name: 'Orange Matcha', price: 70, img: '14.jpg' },
+            { id: 15, type: 'matcha', name: 'Matcha Latte', price: 80, img: '15.jpg' },
+
+            // Fruit Tea
+            { id: 16, type: 'fruittea', name: 'Apple Tea', price: 50, img: '16.jpg' },
+            { id: 17, type: 'fruittea', name: 'Lychee Tea', price: 50, img: '17.jpg' },
+            { id: 18, type: 'fruittea', name: 'Plum Tea', price: 50, img: '18.jpg' },
+            { id: 19, type: 'fruittea', name: 'Peach Tea', price: 50, img: '19.jpg' }
+        ];
+
+        let currentUser = "";
+        let cart = []; 
+        let isPaymentVerified = false;
+
+        // Login
+        function login() {
+            let name = document.getElementById('username').value;
+            if (name.trim() === "") { alert("Please enter your name."); return; }
+            currentUser = name;
+            document.getElementById('login-view').style.display = 'none';
+            document.getElementById('menu-view').style.display = 'block';
+            document.getElementById('user-display').innerText = currentUser;
+            
+            // 🔥 DEFAULT LOAD: COFFEE (No All)
+            renderMenu('coffee');
+        }
+
+        // Render Menu
+        function renderMenu(category) {
+            const grid = document.getElementById('menu-grid');
+            grid.innerHTML = ""; 
+
+            // Filter data
+            const filtered = menuData.filter(item => item.type === category);
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = `menu-card ${item.type}`;
+                card.onclick = () => addToCart(item);
+                
+                card.innerHTML = `
+                    <img src="${item.img}" class="menu-img" onerror="this.src='https://placehold.co/600x400/222/FFF?text=${item.name}'">
+                    <div class="menu-info">
+                        <h3>${item.name}</h3>
+                        <p class="menu-price">${item.price} THB</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Filter Function
+        function filterMenu(category, btn) {
+            // Active class toggle
+            document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            // Render
+            renderMenu(category);
+        }
+
+        // Add to Cart
+        function addToCart(item) {
+            cart.push(item);
+            updateCartIcon();
+            
+            // Animation
+            const fab = document.querySelector('.cart-fab');
+            fab.style.transform = "scale(1.2)";
+            setTimeout(() => fab.style.transform = "scale(1)", 200);
+        }
+
+        function updateCartIcon() {
+            const count = document.getElementById('cart-count');
+            if(cart.length > 0) {
+                count.innerText = cart.length;
+                count.style.display = 'flex';
+            } else {
+                count.style.display = 'none';
+            }
+        }
+
+        function openCartModal() {
+            const container = document.getElementById('cart-items-container');
+            container.innerHTML = "";
+            let total = 0;
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#555; padding:20px;">Your cart is empty.</p>';
+            } else {
+                cart.forEach((item, index) => {
+                    total += item.price;
+                    container.innerHTML += `
+                        <div class="cart-item">
+                            <div>
+                                <div style="font-weight:bold;">${item.name}</div>
+                                <div style="color:var(--gold); font-size:0.9rem;">${item.price} THB</div>
+                            </div>
+                            <i class="fas fa-trash-alt" style="color:#ff6b6b; cursor:pointer;" onclick="removeFromCart(${index})"></i>
+                        </div>
+                    `;
+                });
+            }
+
+            document.getElementById('cart-total').innerText = total + " THB";
+            document.getElementById('cart-view').style.display = 'flex';
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartIcon();
+            openCartModal();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        function goToPayment() {
+            if(cart.length === 0) { alert("Cart is empty."); return; }
+            
+            let total = cart.reduce((sum, item) => sum + item.price, 0);
+
+            document.getElementById('pay-total-display').innerText = total + " THB";
+            document.getElementById('pay-customer').innerText = currentUser;
+            
+            const qrUrl = `https://promptpay.io/${SHOP_PROMPTPAY_ID}/${total}`;
+            document.getElementById('dynamic-qr').src = qrUrl;
+
+            // Reset Lock
+            isPaymentVerified = false;
+            document.getElementById('btn-confirm').disabled = true;
+            document.getElementById('btn-verify').innerHTML = '<i class="fas fa-sync-alt"></i> Verify Payment';
+            document.getElementById('btn-verify').disabled = false;
+            document.getElementById('btn-verify').style.background = "#444";
+            document.getElementById('verify-status').innerHTML = '<span class="status-wait"><i class="fas fa-exclamation-circle"></i> Please scan to pay first.</span>';
+
+            document.getElementById('cart-view').style.display = 'none';
+            document.getElementById('payment-view').style.display = 'flex';
+        }
+
+        function verifyPayment() {
+            const statusBox = document.getElementById('verify-status');
+            const verifyBtn = document.getElementById('btn-verify');
+
+            verifyBtn.disabled = true;
+            verifyBtn.innerHTML = '<span class="spinner"></span> Checking...';
+            statusBox.innerHTML = '<span style="color:#aaa;">Connecting to bank...</span>';
+
+            setTimeout(() => {
+                isPaymentVerified = true;
+                
+                statusBox.innerHTML = '<span class="status-success"><i class="fas fa-check-circle"></i> Payment Verified!</span>';
+                verifyBtn.innerHTML = '<i class="fas fa-check"></i> Verified';
+                verifyBtn.style.background = "#28a745";
+                
+                const confirmBtn = document.getElementById('btn-confirm');
+                confirmBtn.disabled = false;
+                confirmBtn.style.background = "var(--gold)";
+                confirmBtn.style.cursor = "pointer";
+
+            }, 3000);
+        }
+
+        function confirmOrder() {
+            if(!isPaymentVerified) return;
+
+            const orderID = 'SF-' + Math.floor(Math.random() * 9000 + 1000);
+            const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+            
+            let menuString = cart.map(i => i.name).join(", ");
+            let totalPrice = cart.reduce((sum, item) => sum + item.price, 0);
+
+            const newOrder = {
+                id: orderID,
+                customer: currentUser,
+                menu: menuString,
+                price: totalPrice,
+                time: time
+            };
+
+            let db = JSON.parse(localStorage.getItem('skyfall_db_final')) || [];
+            db.push(newOrder);
+            localStorage.setItem('skyfall_db_final', JSON.stringify(db));
+            
+            document.getElementById('payment-view').style.display = 'none';
+            document.getElementById('menu-view').style.display = 'none';
+            document.getElementById('status-view').style.display = 'flex';
+            document.getElementById('order-id').innerText = orderID;
+        }
+    </script>
+</body>
+</html>
